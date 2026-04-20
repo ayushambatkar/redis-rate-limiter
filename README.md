@@ -1,11 +1,11 @@
 # FastAPI Redis Rate Limiter
 
-Minimal backend service using FastAPI and Redis with an atomic Lua-scripted sliding-window rate limiter.
+Backend service using FastAPI and Redis with a Lua-based sliding window rate limiter for accurate limits under concurrent requests.
 
 ## What it does
 
 - `POST /request`
-  - Input: `{ "user_id": string, "payload": any }`
+  - Input: `{ "user_id": string}`
   - Enforces: max 5 requests per user per 60 seconds
   - Returns `429` when the limit is exceeded
   - Returns `{ "status": "ok" }` when allowed
