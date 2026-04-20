@@ -106,3 +106,9 @@ Sample `GET /stats?user_id=u1` response:
 - Returns proper HTTP status (`429`) when limit is exceeded.
 - Includes `Retry-After` to indicate when the client can retry.
 - Input is validated using FastAPI/Pydantic.
+
+## Deployment
+
+- Deployed on Render
+- API docs: https://redis-rate-limiter-7nhz.onrender.com/docs
+- A cron job is configured to keep the service awake (prevents cold starts)
