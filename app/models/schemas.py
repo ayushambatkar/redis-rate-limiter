@@ -8,8 +8,6 @@ UserId = Annotated[str, StringConstraints(strip_whitespace=True, min_length=1)]
 
 class RequestBody(BaseModel):
     user_id: UserId
-    payload: Any = None
-
 
 class RequestResponse(BaseModel):
     status: Literal["ok"]

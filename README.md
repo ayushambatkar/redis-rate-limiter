@@ -28,46 +28,52 @@ app/
 
 ## Run with Docker
 
-1. Build and start:
+1. Start Redis:
 
 ```bash
-docker compose up --build
+docker compose up
 ```
 
-2. API base URL:
+2. Start fastAPI app:
+```cmd
+uvicorn app.main:app
+```
+
+3. API base URL:
 
 ```text
 http://localhost:8000
 ```
 
-3. Example requests:
+4. Example requests:
 
 ```bash
 curl -X POST http://localhost:8000/request \
   -H "Content-Type: application/json" \
-  -d '{"user_id":"u1","payload":{"msg":"hello"}}'
+  -d '{"user_id":"u1"}'
 
-curl http://localhost:8000/stats
+curl http://localhost:8000/stats?user_id=u1
 ```
 
 ## Design decisions
 
-- Redis sorted set per user (`rate_limit:{user_id}`) stores request timestamps.
-- Lua script performs cleanup, count, limit-check, and insert atomically to avoid race conditions under concurrency.
-- A per-user total counter (`rate_total:{user_id}`) is incremented in the same Lua script.
-- A global Redis set (`rate_limit:users`) tracks known users for `GET /stats`.
-- Async FastAPI + async Redis client for non-blocking I/O.
+- Each user has a Redis sorted set (`rate_limit:{user_id}`) that stores request timestamps.
+- A Lua script handles everything in one step: remove old requests, count current ones, check limit, and add new request.
+- This makes the rate limiting safe under concurrent requests (no race conditions).
+- A separate counter (`rate_total:{user_id}`) keeps track of total requests per user.
+- A global Redis set (`rate_limit:users`) stores all users for the `/stats` endpoint.
+- FastAPI and async Redis are used for non-blocking performance.
 
 ## Limitations
 
-- In-memory growth: user set and total counters can grow without TTL.
-- Single Redis instance: no replication/failover configured.
-- No sharding/partitioning for very high cardinality workloads.
-- No authentication/authorization (intentionally minimal).
+- Data can grow in memory since there is no cleanup for old users or counters.
+- Only a single Redis instance is used (no backup or failover).
+- Not designed for very large scale (no sharding).
+- No authentication or security added (kept simple on purpose).
 
 ## Notes on concurrency and correctness
 
-- The rate-limiting critical section is implemented in Lua and executed atomically by Redis.
-- This prevents race conditions when many requests from the same user arrive simultaneously.
-- HTTP status handling is explicit (`429` on limit exceeded).
-- Request schema uses FastAPI/Pydantic validation.
+- The Lua script runs atomically inside Redis, so multiple requests don’t interfere with each other.
+- This ensures correct rate limiting even under heavy parallel requests.
+- Returns proper HTTP status (`429`) when limit is exceeded.
+- Input is validated using FastAPI/Pydantic.
