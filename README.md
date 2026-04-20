@@ -104,4 +104,5 @@ Sample `GET /stats?user_id=u1` response:
 - The Lua script runs atomically inside Redis, so multiple requests don’t interfere with each other.
 - This ensures correct rate limiting even under heavy parallel requests.
 - Returns proper HTTP status (`429`) when limit is exceeded.
+- Includes `Retry-After` to indicate when the client can retry.
 - Input is validated using FastAPI/Pydantic.
