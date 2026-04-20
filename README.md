@@ -5,14 +5,26 @@ Backend service using FastAPI and Redis with a Lua-based sliding window rate lim
 ## What it does
 
 - `POST /request`
-  - Input: `{ "user_id": string}`
+  - Input: `{ "user_id": string }`
   - Enforces: max 5 requests per user per 60 seconds
   - Returns `429` when the limit is exceeded
-  - Returns `{ "status": "ok" }` when allowed
+  - Returns 
+  ```
+    { 
+      "status": "ok", 
+      "reset_in_seconds": int, 
+      "requests_left_in_window": int 
+    }
+    ``` 
+    when allowed
+      
 - `GET /stats`
   - Returns per-user stats:
     - `total_requests`
     - `requests_in_current_window`
+    - `remaining_quota`
+    - `window_reset_in_seconds`
+    - `last_request_ts`
 
 ## Project structure
 
@@ -53,6 +65,22 @@ curl -X POST http://localhost:8000/request \
   -d '{"user_id":"u1"}'
 
 curl http://localhost:8000/stats?user_id=u1
+```
+
+Sample `GET /stats?user_id=u1` response:
+
+```json
+{
+  "users": {
+    "u1": {
+      "total_requests": 12,
+      "requests_in_current_window": 3,
+      "remaining_quota": 2,
+      "window_reset_in_seconds": 25,
+      "last_request_ts": 1713540000
+    }
+  }
+}
 ```
 
 ## Design decisions
